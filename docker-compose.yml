@@ -39,7 +39,10 @@ services:
       "
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.22.0
+    build:
+      context: .
+      dockerfile: docker/mlflow/Dockerfile
+    image: local/mlflow-server:2.22.0
     container_name: mlflow-server
     depends_on:
       - postgres
@@ -61,4 +64,3 @@ services:
 volumes:
   postgres_data:
   minio_data:
-

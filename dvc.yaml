@@ -1,13 +1,13 @@
 stages:
   prepare:
-    cmd: python src/prepare.py
+    cmd: .venv\Scripts\python.exe -m src.prepare
     deps:
       - src/prepare.py
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
   train:
-    cmd: python src/train.py
+    cmd: .venv\Scripts\python.exe -m src.train
     deps:
       - src/train.py
       - data/processed/train.csv
@@ -21,11 +21,10 @@ stages:
     metrics:
       - reports/metrics.json
   evaluate:
-    cmd: python src/evaluate.py
+    cmd: .venv\Scripts\python.exe -m src.evaluate
     deps:
       - src/evaluate.py
       - models/model.joblib
       - data/processed/test.csv
     metrics:
       - reports/eval.json
-

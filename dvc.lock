@@ -1,0 +1,67 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: .venv\Scripts\python.exe -m src.prepare
+    deps:
+    - path: src/prepare.py
+      hash: md5
+      md5: 127107a3692706112f783d0cecd8344e
+      size: 720
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 3b531426212ae90fea008a46333e53d9
+      size: 647
+    - path: data/processed/train.csv
+      hash: md5
+      md5: f27a97349b5d81a5b868e96bc0b0b160
+      size: 2357
+  train:
+    cmd: .venv\Scripts\python.exe -m src.train
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: f27a97349b5d81a5b868e96bc0b0b160
+      size: 2357
+    - path: params.yaml
+      hash: md5
+      md5: 5271b7beb00d387382acd86a7e3f53bb
+      size: 101
+    - path: src/train.py
+      hash: md5
+      md5: b016a95791a1899558ad24756ea0b13b
+      size: 1469
+    params:
+      params.yaml:
+        train.max_depth: 4
+        train.random_state: 42
+        train.test_size: 0.2
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: fbe9762f6f69782fa0d4e07c9e73eb8b
+      size: 2769
+    - path: reports/metrics.json
+      hash: md5
+      md5: 49a9b831bba00b151165486507318690
+      size: 84
+  evaluate:
+    cmd: .venv\Scripts\python.exe -m src.evaluate
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 3b531426212ae90fea008a46333e53d9
+      size: 647
+    - path: models/model.joblib
+      hash: md5
+      md5: fbe9762f6f69782fa0d4e07c9e73eb8b
+      size: 2769
+    - path: src/evaluate.py
+      hash: md5
+      md5: d47232e004c73be6a3cf39e6a038c91a
+      size: 799
+    outs:
+    - path: reports/eval.json
+      hash: md5
+      md5: 87e741ce617fd8bc9a2772df466b9cec
+      size: 834

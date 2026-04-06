@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .dvc/cache/
+.dvc/site-cache/
 .dvc/tmp/
 .dvc/config.local
 data/raw/
