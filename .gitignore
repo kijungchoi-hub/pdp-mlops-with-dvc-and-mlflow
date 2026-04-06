@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+data/raw/
+data/processed/
+models/
+mlruns/
+artifacts/
+.env
+.pytest_cache/
+.github/.secrets/
+.DS_Store

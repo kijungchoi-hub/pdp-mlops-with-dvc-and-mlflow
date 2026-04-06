@@ -1,0 +1,11 @@
+dvc[s3]
+fastapi
+joblib
+mlflow
+numpy
+pandas
+psycopg2-binary
+pyyaml
+scikit-learn
+uvicorn
+boto3

@@ -1,0 +1,31 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+      - src/prepare.py
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/processed/train.csv
+      - params.yaml
+    params:
+      - train.random_state
+      - train.max_depth
+      - train.test_size
+    outs:
+      - models/model.joblib
+    metrics:
+      - reports/metrics.json
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - models/model.joblib
+      - data/processed/test.csv
+    metrics:
+      - reports/eval.json
+
