@@ -1,0 +1,29 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: iris-model
+  namespace: mlops
+spec:
+  predictor:
+    containers:
+      - name: predictor
+        image: your-registry/mlops-api:latest
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MODEL_PATH
+            value: /app/models/model.joblib
+        ports:
+          - containerPort: 8000
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20

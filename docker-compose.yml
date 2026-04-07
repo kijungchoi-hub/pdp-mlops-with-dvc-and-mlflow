@@ -1,6 +1,21 @@
 version: "3.9"
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    image: local/mlops-api:latest
+    container_name: mlops-api
+    depends_on:
+      - mlflow
+    environment:
+      MODEL_PATH: /app/models/model.joblib
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+
   postgres:
     image: postgres:16
     container_name: mlflow-postgres
@@ -41,7 +56,7 @@ services:
   mlflow:
     build:
       context: .
-      dockerfile: docker/mlflow/Dockerfile
+      dockerfile: infra/docker/mlflow.Dockerfile
     image: local/mlflow-server:2.22.0
     container_name: mlflow-server
     depends_on:

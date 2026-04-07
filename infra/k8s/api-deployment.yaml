@@ -16,6 +16,9 @@ spec:
       containers:
         - name: mlops-api
           image: your-registry/mlops-api:latest
+          env:
+            - name: MODEL_PATH
+              value: /app/models/model.joblib
           ports:
             - containerPort: 8000
           readinessProbe:

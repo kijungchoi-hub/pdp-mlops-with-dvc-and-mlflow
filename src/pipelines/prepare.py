@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
-from src.utils import ensure_dirs, load_params
+from src.common.utils import ensure_dirs, load_params
 
 
 def main() -> None:
@@ -27,4 +27,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

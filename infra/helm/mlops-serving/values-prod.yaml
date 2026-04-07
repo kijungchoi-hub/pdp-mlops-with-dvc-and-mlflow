@@ -1,0 +1,65 @@
+mode: kserve
+
+image:
+  repository: ghcr.io/your-org/mlops-api
+  tag: stable
+  pullPolicy: IfNotPresent
+
+model:
+  path: /app/models/model.joblib
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+deployment:
+  replicaCount: 2
+  containerPort: 8000
+  env: []
+  envFromSecret: ""
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+
+kserve:
+  apiVersion: serving.kserve.io/v1beta1
+  inferenceServiceName: iris-model
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+secret:
+  create: false
+  name: ""
+  stringData: {}
+
+persistence:
+  enabled: false
+  existingClaim: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  mountPath: /app/models
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: mlops-api.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mlops-serving
+description: Helm chart for FastAPI model serving and optional KServe InferenceService
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

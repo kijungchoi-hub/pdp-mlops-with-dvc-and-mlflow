@@ -1,12 +1,20 @@
 schema: '2.0'
 stages:
   prepare:
-    cmd: .venv\Scripts\python.exe -m src.prepare
+    cmd: .venv\Scripts\python.exe -m src.pipelines.prepare
     deps:
-    - path: src/prepare.py
+    - path: configs/params.yaml
       hash: md5
-      md5: 127107a3692706112f783d0cecd8344e
-      size: 720
+      md5: 5271b7beb00d387382acd86a7e3f53bb
+      size: 101
+    - path: src/common/utils.py
+      hash: md5
+      md5: 59cb9d25c92a7b11c0a966a1052bdcfd
+      size: 400
+    - path: src/pipelines/prepare.py
+      hash: md5
+      md5: 93c33662daee561635beb51f1080ac08
+      size: 726
     outs:
     - path: data/processed/test.csv
       hash: md5
@@ -17,22 +25,26 @@ stages:
       md5: f27a97349b5d81a5b868e96bc0b0b160
       size: 2357
   train:
-    cmd: .venv\Scripts\python.exe -m src.train
+    cmd: .venv\Scripts\python.exe -m src.pipelines.train
     deps:
+    - path: configs/params.yaml
+      hash: md5
+      md5: 5271b7beb00d387382acd86a7e3f53bb
+      size: 101
     - path: data/processed/train.csv
       hash: md5
       md5: f27a97349b5d81a5b868e96bc0b0b160
       size: 2357
-    - path: params.yaml
+    - path: src/common/utils.py
       hash: md5
-      md5: 5271b7beb00d387382acd86a7e3f53bb
-      size: 101
-    - path: src/train.py
+      md5: 59cb9d25c92a7b11c0a966a1052bdcfd
+      size: 400
+    - path: src/pipelines/train.py
       hash: md5
-      md5: b016a95791a1899558ad24756ea0b13b
-      size: 1469
+      md5: 33f4284a60b3e90f5573e677b7cdee2d
+      size: 1476
     params:
-      params.yaml:
+      configs/params.yaml:
         train.max_depth: 4
         train.random_state: 42
         train.test_size: 0.2
@@ -46,7 +58,7 @@ stages:
       md5: 49a9b831bba00b151165486507318690
       size: 84
   evaluate:
-    cmd: .venv\Scripts\python.exe -m src.evaluate
+    cmd: .venv\Scripts\python.exe -m src.pipelines.evaluate
     deps:
     - path: data/processed/test.csv
       hash: md5
@@ -56,10 +68,14 @@ stages:
       hash: md5
       md5: fbe9762f6f69782fa0d4e07c9e73eb8b
       size: 2769
-    - path: src/evaluate.py
+    - path: src/common/utils.py
       hash: md5
-      md5: d47232e004c73be6a3cf39e6a038c91a
-      size: 799
+      md5: 59cb9d25c92a7b11c0a966a1052bdcfd
+      size: 400
+    - path: src/pipelines/evaluate.py
+      hash: md5
+      md5: 91719f3650011408932d1a6df52d1d5d
+      size: 805
     outs:
     - path: reports/eval.json
       hash: md5

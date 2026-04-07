@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 
-from src.utils import ensure_dirs, get_env, load_params
+from src.common.utils import ensure_dirs, get_env, load_params
 
 
 def main() -> None:

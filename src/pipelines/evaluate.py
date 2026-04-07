@@ -4,7 +4,7 @@ import joblib
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report, f1_score
 
-from src.utils import ensure_dirs
+from src.common.utils import ensure_dirs
 
 
 def main() -> None:
@@ -29,4 +29,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

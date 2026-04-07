@@ -9,7 +9,7 @@ def ensure_dirs(*dirs: str) -> None:
         Path(directory).mkdir(parents=True, exist_ok=True)
 
 
-def load_params(path: str = "params.yaml") -> dict:
+def load_params(path: str = "configs/params.yaml") -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 

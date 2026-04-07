@@ -1,29 +1,34 @@
 stages:
   prepare:
-    cmd: .venv\Scripts\python.exe -m src.prepare
+    cmd: .venv\Scripts\python.exe -m src.pipelines.prepare
     deps:
-      - src/prepare.py
+      - src/pipelines/prepare.py
+      - src/common/utils.py
+      - configs/params.yaml
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
   train:
-    cmd: .venv\Scripts\python.exe -m src.train
+    cmd: .venv\Scripts\python.exe -m src.pipelines.train
     deps:
-      - src/train.py
+      - src/pipelines/train.py
+      - src/common/utils.py
       - data/processed/train.csv
-      - params.yaml
+      - configs/params.yaml
     params:
-      - train.random_state
-      - train.max_depth
-      - train.test_size
+      - configs/params.yaml:
+          - train.random_state
+          - train.max_depth
+          - train.test_size
     outs:
       - models/model.joblib
     metrics:
       - reports/metrics.json
   evaluate:
-    cmd: .venv\Scripts\python.exe -m src.evaluate
+    cmd: .venv\Scripts\python.exe -m src.pipelines.evaluate
     deps:
-      - src/evaluate.py
+      - src/pipelines/evaluate.py
+      - src/common/utils.py
       - models/model.joblib
       - data/processed/test.csv
     metrics:
