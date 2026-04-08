@@ -1,4 +1,12 @@
-# CI/CD 배포 가이드
+﻿# CI/CD 배포 가이드
+## 관련 파일
+
+- [GitHub Actions 워크플로](../.github/workflows/ci-cd.yaml)
+- [파이프라인 정의](../dvc.yaml)
+- [API Dockerfile](../infra/docker/api.Dockerfile)
+- [Helm 차트](../infra/helm/mlops-serving/Chart.yaml)
+- [Argo CD 가이드](./argocd-deployment-guide.md)
+
 
 ## 1. 목적
 
@@ -230,3 +238,4 @@ kubectl get inferenceservices -n mlops
 - deploy 후 cluster-level smoke test 자동화
 - 배포 후 `/health` 및 `/predict` smoke test 자동화
 - Helm rollback 절차를 CI/CD 문서와 runbook에 연결
+

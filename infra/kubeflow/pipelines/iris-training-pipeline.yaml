@@ -1,0 +1,708 @@
+# PIPELINE DEFINITION
+# Name: iris-training-pipeline
+# Description: Kubeflow Pipelines v2 workflow for prepare, train, and evaluate.
+# Inputs:
+#    chart_path: str [Default: 'infra/helm/mlops-serving']
+#    enable_deploy_candidate: bool [Default: False]
+#    enable_helm_deploy: bool [Default: False]
+#    enable_mlflow: bool [Default: False]
+#    experiment_name: str [Default: 'iris-kfp']
+#    image_repository: str [Default: 'ghcr.io/your-org/mlops-api']
+#    image_tag: str [Default: 'stable']
+#    max_depth: int [Default: 4.0]
+#    mlflow_tracking_uri: str [Default: 'http://mlflow-server.mlops.svc.cluster.local:5000']
+#    namespace: str [Default: 'mlops']
+#    random_state: int [Default: 42.0]
+#    release_name: str [Default: 'mlops-serving']
+#    repo_revision: str [Default: 'main']
+#    repo_url: str [Default: 'https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git']
+#    test_size: float [Default: 0.2]
+#    threshold_accuracy: float [Default: 0.9]
+#    values_file: str [Default: 'infra/helm/mlops-serving/values-prod.yaml']
+components:
+  comp-condition-1:
+    dag:
+      tasks:
+        condition-2:
+          componentRef:
+            name: comp-condition-2
+          inputs:
+            parameters:
+              pipelinechannel--chart_path:
+                componentInputParameter: pipelinechannel--chart_path
+              pipelinechannel--enable_deploy_candidate:
+                componentInputParameter: pipelinechannel--enable_deploy_candidate
+              pipelinechannel--enable_helm_deploy:
+                componentInputParameter: pipelinechannel--enable_helm_deploy
+              pipelinechannel--evaluate-op-test_accuracy:
+                componentInputParameter: pipelinechannel--evaluate-op-test_accuracy
+              pipelinechannel--image_repository:
+                componentInputParameter: pipelinechannel--image_repository
+              pipelinechannel--image_tag:
+                componentInputParameter: pipelinechannel--image_tag
+              pipelinechannel--namespace:
+                componentInputParameter: pipelinechannel--namespace
+              pipelinechannel--release_name:
+                componentInputParameter: pipelinechannel--release_name
+              pipelinechannel--repo_revision:
+                componentInputParameter: pipelinechannel--repo_revision
+              pipelinechannel--repo_url:
+                componentInputParameter: pipelinechannel--repo_url
+              pipelinechannel--threshold_accuracy:
+                componentInputParameter: pipelinechannel--threshold_accuracy
+              pipelinechannel--values_file:
+                componentInputParameter: pipelinechannel--values_file
+          taskInfo:
+            name: condition-2
+          triggerPolicy:
+            condition: inputs.parameter_values['pipelinechannel--evaluate-op-test_accuracy']
+              >= inputs.parameter_values['pipelinechannel--threshold_accuracy']
+    inputDefinitions:
+      parameters:
+        pipelinechannel--chart_path:
+          parameterType: STRING
+        pipelinechannel--enable_deploy_candidate:
+          parameterType: BOOLEAN
+        pipelinechannel--enable_helm_deploy:
+          parameterType: BOOLEAN
+        pipelinechannel--evaluate-op-test_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--image_repository:
+          parameterType: STRING
+        pipelinechannel--image_tag:
+          parameterType: STRING
+        pipelinechannel--namespace:
+          parameterType: STRING
+        pipelinechannel--release_name:
+          parameterType: STRING
+        pipelinechannel--repo_revision:
+          parameterType: STRING
+        pipelinechannel--repo_url:
+          parameterType: STRING
+        pipelinechannel--threshold_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--values_file:
+          parameterType: STRING
+  comp-condition-2:
+    dag:
+      tasks:
+        condition-3:
+          componentRef:
+            name: comp-condition-3
+          dependentTasks:
+          - register-deploy-candidate-op
+          inputs:
+            parameters:
+              pipelinechannel--chart_path:
+                componentInputParameter: pipelinechannel--chart_path
+              pipelinechannel--enable_deploy_candidate:
+                componentInputParameter: pipelinechannel--enable_deploy_candidate
+              pipelinechannel--enable_helm_deploy:
+                componentInputParameter: pipelinechannel--enable_helm_deploy
+              pipelinechannel--evaluate-op-test_accuracy:
+                componentInputParameter: pipelinechannel--evaluate-op-test_accuracy
+              pipelinechannel--image_repository:
+                componentInputParameter: pipelinechannel--image_repository
+              pipelinechannel--image_tag:
+                componentInputParameter: pipelinechannel--image_tag
+              pipelinechannel--namespace:
+                componentInputParameter: pipelinechannel--namespace
+              pipelinechannel--release_name:
+                componentInputParameter: pipelinechannel--release_name
+              pipelinechannel--repo_revision:
+                componentInputParameter: pipelinechannel--repo_revision
+              pipelinechannel--repo_url:
+                componentInputParameter: pipelinechannel--repo_url
+              pipelinechannel--threshold_accuracy:
+                componentInputParameter: pipelinechannel--threshold_accuracy
+              pipelinechannel--values_file:
+                componentInputParameter: pipelinechannel--values_file
+          taskInfo:
+            name: condition-3
+          triggerPolicy:
+            condition: inputs.parameter_values['pipelinechannel--enable_helm_deploy']
+              == true
+        register-deploy-candidate-op:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-register-deploy-candidate-op
+          inputs:
+            parameters:
+              image_repository:
+                componentInputParameter: pipelinechannel--image_repository
+              image_tag:
+                componentInputParameter: pipelinechannel--image_tag
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              release_name:
+                componentInputParameter: pipelinechannel--release_name
+              test_accuracy:
+                componentInputParameter: pipelinechannel--evaluate-op-test_accuracy
+              threshold_accuracy:
+                componentInputParameter: pipelinechannel--threshold_accuracy
+              values_file:
+                componentInputParameter: pipelinechannel--values_file
+          taskInfo:
+            name: register-deploy-candidate-op
+    inputDefinitions:
+      parameters:
+        pipelinechannel--chart_path:
+          parameterType: STRING
+        pipelinechannel--enable_deploy_candidate:
+          parameterType: BOOLEAN
+        pipelinechannel--enable_helm_deploy:
+          parameterType: BOOLEAN
+        pipelinechannel--evaluate-op-test_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--image_repository:
+          parameterType: STRING
+        pipelinechannel--image_tag:
+          parameterType: STRING
+        pipelinechannel--namespace:
+          parameterType: STRING
+        pipelinechannel--release_name:
+          parameterType: STRING
+        pipelinechannel--repo_revision:
+          parameterType: STRING
+        pipelinechannel--repo_url:
+          parameterType: STRING
+        pipelinechannel--threshold_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--values_file:
+          parameterType: STRING
+  comp-condition-3:
+    dag:
+      tasks:
+        helm-deploy-op:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-helm-deploy-op
+          inputs:
+            parameters:
+              chart_path:
+                componentInputParameter: pipelinechannel--chart_path
+              image_repository:
+                componentInputParameter: pipelinechannel--image_repository
+              image_tag:
+                componentInputParameter: pipelinechannel--image_tag
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              release_name:
+                componentInputParameter: pipelinechannel--release_name
+              repo_revision:
+                componentInputParameter: pipelinechannel--repo_revision
+              repo_url:
+                componentInputParameter: pipelinechannel--repo_url
+              values_file:
+                componentInputParameter: pipelinechannel--values_file
+          taskInfo:
+            name: helm-deploy-op
+    inputDefinitions:
+      parameters:
+        pipelinechannel--chart_path:
+          parameterType: STRING
+        pipelinechannel--enable_deploy_candidate:
+          parameterType: BOOLEAN
+        pipelinechannel--enable_helm_deploy:
+          parameterType: BOOLEAN
+        pipelinechannel--evaluate-op-test_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--image_repository:
+          parameterType: STRING
+        pipelinechannel--image_tag:
+          parameterType: STRING
+        pipelinechannel--namespace:
+          parameterType: STRING
+        pipelinechannel--release_name:
+          parameterType: STRING
+        pipelinechannel--repo_revision:
+          parameterType: STRING
+        pipelinechannel--repo_url:
+          parameterType: STRING
+        pipelinechannel--threshold_accuracy:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--values_file:
+          parameterType: STRING
+  comp-evaluate-op:
+    executorLabel: exec-evaluate-op
+    inputDefinitions:
+      artifacts:
+        model_artifact:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        test_dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        eval_metrics:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+      parameters:
+        test_accuracy:
+          parameterType: NUMBER_DOUBLE
+        test_f1_macro:
+          parameterType: NUMBER_DOUBLE
+  comp-helm-deploy-op:
+    executorLabel: exec-helm-deploy-op
+    inputDefinitions:
+      parameters:
+        chart_path:
+          parameterType: STRING
+        image_repository:
+          parameterType: STRING
+        image_tag:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+        release_name:
+          parameterType: STRING
+        repo_revision:
+          parameterType: STRING
+        repo_url:
+          parameterType: STRING
+        values_file:
+          parameterType: STRING
+  comp-prepare-op:
+    executorLabel: exec-prepare-op
+    inputDefinitions:
+      parameters:
+        random_state:
+          parameterType: NUMBER_INTEGER
+        test_size:
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        test_dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        train_dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-register-deploy-candidate-op:
+    executorLabel: exec-register-deploy-candidate-op
+    inputDefinitions:
+      parameters:
+        image_repository:
+          parameterType: STRING
+        image_tag:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+        release_name:
+          parameterType: STRING
+        test_accuracy:
+          parameterType: NUMBER_DOUBLE
+        threshold_accuracy:
+          parameterType: NUMBER_DOUBLE
+        values_file:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        deployment_plan:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-train-op:
+    executorLabel: exec-train-op
+    inputDefinitions:
+      artifacts:
+        train_dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        enable_mlflow:
+          parameterType: BOOLEAN
+        experiment_name:
+          parameterType: STRING
+        max_depth:
+          parameterType: NUMBER_INTEGER
+        mlflow_tracking_uri:
+          parameterType: STRING
+        random_state:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        model_artifact:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        train_metrics:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-evaluate-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluate_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'joblib' 'numpy'\
+          \ 'pandas' 'scikit-learn'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.16.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluate_op(\n    test_dataset: Input[Dataset],\n    model_artifact:\
+          \ Input[Model],\n    eval_metrics: Output[Metrics],\n) -> NamedTuple(\"\
+          EvaluateOutputs\", [(\"test_accuracy\", float), (\"test_f1_macro\", float)]):\n\
+          \    import joblib\n    import pandas as pd\n    from sklearn.metrics import\
+          \ accuracy_score, f1_score\n\n    test_df = pd.read_csv(test_dataset.path)\n\
+          \    x_test = test_df.drop(columns=[\"label\"])\n    y_test = test_df[\"\
+          label\"]\n\n    model = joblib.load(model_artifact.path)\n    preds = model.predict(x_test)\n\
+          \n    metrics = {\n        \"test_accuracy\": float(accuracy_score(y_test,\
+          \ preds)),\n        \"test_f1_macro\": float(f1_score(y_test, preds, average=\"\
+          macro\")),\n    }\n\n    for key, value in metrics.items():\n        eval_metrics.log_metric(key,\
+          \ value)\n\n    from collections import namedtuple\n\n    outputs = namedtuple(\"\
+          EvaluateOutputs\", [\"test_accuracy\", \"test_f1_macro\"])\n    return outputs(metrics[\"\
+          test_accuracy\"], metrics[\"test_f1_macro\"])\n\n"
+        image: python:3.11-slim
+    exec-helm-deploy-op:
+      container:
+        args:
+        - _
+        - '{{$.inputs.parameters[''repo_revision'']}}'
+        - '{{$.inputs.parameters[''repo_url'']}}'
+        - '{{$.inputs.parameters[''release_name'']}}'
+        - '{{$.inputs.parameters[''chart_path'']}}'
+        - '{{$.inputs.parameters[''namespace'']}}'
+        - '{{$.inputs.parameters[''values_file'']}}'
+        - '{{$.inputs.parameters[''image_repository'']}}'
+        - '{{$.inputs.parameters[''image_tag'']}}'
+        command:
+        - sh
+        - -ec
+        - apk add --no-cache git >/dev/null && rm -rf /tmp/mlops-repo && git clone
+          --depth 1 --branch "$1" "$2" /tmp/mlops-repo && helm upgrade --install "$3"
+          "/tmp/mlops-repo/$4" --namespace "$5" --create-namespace -f "/tmp/mlops-repo/$6"
+          --set image.repository="$7" --set image.tag="$8"
+        image: alpine/helm:3.15.4
+    exec-prepare-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - prepare_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'joblib' 'numpy'\
+          \ 'pandas' 'pyyaml' 'scikit-learn'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.16.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef prepare_op(\n    test_size: float,\n    random_state: int,\n\
+          \    train_dataset: Output[Dataset],\n    test_dataset: Output[Dataset],\n\
+          ) -> None:\n    import pandas as pd\n    from sklearn.datasets import load_iris\n\
+          \    from sklearn.model_selection import train_test_split\n\n    iris =\
+          \ load_iris(as_frame=True)\n    df = iris.frame.rename(columns={\"target\"\
+          : \"label\"})\n\n    train_df, test_df = train_test_split(\n        df,\n\
+          \        test_size=test_size,\n        random_state=random_state,\n    \
+          \    stratify=df[\"label\"],\n    )\n\n    train_df.to_csv(train_dataset.path,\
+          \ index=False)\n    test_df.to_csv(test_dataset.path, index=False)\n\n"
+        image: python:3.11-slim
+    exec-register-deploy-candidate-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - register_deploy_candidate_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef register_deploy_candidate_op(\n    test_accuracy: float,\n  \
+          \  threshold_accuracy: float,\n    image_repository: str,\n    image_tag:\
+          \ str,\n    namespace: str,\n    release_name: str,\n    values_file: str,\n\
+          \    deployment_plan: Output[Dataset],\n) -> str:\n    import json\n\n \
+          \   plan = {\n        \"approved\": True,\n        \"reason\": \"accuracy_threshold_met\"\
+          ,\n        \"test_accuracy\": test_accuracy,\n        \"threshold_accuracy\"\
+          : threshold_accuracy,\n        \"image_repository\": image_repository,\n\
+          \        \"image_tag\": image_tag,\n        \"namespace\": namespace,\n\
+          \        \"release_name\": release_name,\n        \"values_file\": values_file,\n\
+          \        \"next_step\": \"Run helm upgrade --install with the approved image\
+          \ values.\",\n    }\n\n    with open(deployment_plan.path, \"w\", encoding=\"\
+          utf-8\") as f:\n        json.dump(plan, f, indent=2)\n\n    return (\n \
+          \       f\"Deployment candidate approved: accuracy={test_accuracy:.4f},\
+          \ \"\n        f\"threshold={threshold_accuracy:.4f}, release={release_name}\"\
+          \n    )\n\n"
+        image: python:3.11-slim
+    exec-train-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'joblib' 'mlflow==2.22.0'\
+          \ 'numpy' 'pandas' 'scikit-learn'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.16.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_op(\n    train_dataset: Input[Dataset],\n    random_state:\
+          \ int,\n    max_depth: int,\n    enable_mlflow: bool,\n    mlflow_tracking_uri:\
+          \ str,\n    experiment_name: str,\n    model_artifact: Output[Model],\n\
+          \    train_metrics: Output[Metrics],\n) -> None:\n    import joblib\n  \
+          \  import mlflow\n    import pandas as pd\n    from sklearn.metrics import\
+          \ accuracy_score, f1_score\n    from sklearn.tree import DecisionTreeClassifier\n\
+          \n    train_df = pd.read_csv(train_dataset.path)\n    x_train = train_df.drop(columns=[\"\
+          label\"])\n    y_train = train_df[\"label\"]\n\n    model = DecisionTreeClassifier(\n\
+          \        random_state=random_state,\n        max_depth=max_depth,\n    )\n\
+          \    model.fit(x_train, y_train)\n\n    preds = model.predict(x_train)\n\
+          \    metrics = {\n        \"train_accuracy\": float(accuracy_score(y_train,\
+          \ preds)),\n        \"train_f1_macro\": float(f1_score(y_train, preds, average=\"\
+          macro\")),\n    }\n\n    for key, value in metrics.items():\n        train_metrics.log_metric(key,\
+          \ value)\n\n    if enable_mlflow:\n        mlflow.set_tracking_uri(mlflow_tracking_uri)\n\
+          \        mlflow.set_experiment(experiment_name)\n        with mlflow.start_run():\n\
+          \            mlflow.log_params({\n                \"random_state\": random_state,\n\
+          \                \"max_depth\": max_depth,\n            })\n           \
+          \ mlflow.log_metrics(metrics)\n\n    joblib.dump(model, model_artifact.path)\n\
+          \n"
+        image: python:3.11-slim
+pipelineInfo:
+  description: Kubeflow Pipelines v2 workflow for prepare, train, and evaluate.
+  name: iris-training-pipeline
+root:
+  dag:
+    tasks:
+      condition-1:
+        componentRef:
+          name: comp-condition-1
+        dependentTasks:
+        - evaluate-op
+        inputs:
+          parameters:
+            pipelinechannel--chart_path:
+              componentInputParameter: chart_path
+            pipelinechannel--enable_deploy_candidate:
+              componentInputParameter: enable_deploy_candidate
+            pipelinechannel--enable_helm_deploy:
+              componentInputParameter: enable_helm_deploy
+            pipelinechannel--evaluate-op-test_accuracy:
+              taskOutputParameter:
+                outputParameterKey: test_accuracy
+                producerTask: evaluate-op
+            pipelinechannel--image_repository:
+              componentInputParameter: image_repository
+            pipelinechannel--image_tag:
+              componentInputParameter: image_tag
+            pipelinechannel--namespace:
+              componentInputParameter: namespace
+            pipelinechannel--release_name:
+              componentInputParameter: release_name
+            pipelinechannel--repo_revision:
+              componentInputParameter: repo_revision
+            pipelinechannel--repo_url:
+              componentInputParameter: repo_url
+            pipelinechannel--threshold_accuracy:
+              componentInputParameter: threshold_accuracy
+            pipelinechannel--values_file:
+              componentInputParameter: values_file
+        taskInfo:
+          name: condition-1
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--enable_deploy_candidate']
+            == true
+      evaluate-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-op
+        dependentTasks:
+        - prepare-op
+        - train-op
+        inputs:
+          artifacts:
+            model_artifact:
+              taskOutputArtifact:
+                outputArtifactKey: model_artifact
+                producerTask: train-op
+            test_dataset:
+              taskOutputArtifact:
+                outputArtifactKey: test_dataset
+                producerTask: prepare-op
+        taskInfo:
+          name: evaluate-op
+      prepare-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-prepare-op
+        inputs:
+          parameters:
+            random_state:
+              componentInputParameter: random_state
+            test_size:
+              componentInputParameter: test_size
+        taskInfo:
+          name: prepare-op
+      train-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-op
+        dependentTasks:
+        - prepare-op
+        inputs:
+          artifacts:
+            train_dataset:
+              taskOutputArtifact:
+                outputArtifactKey: train_dataset
+                producerTask: prepare-op
+          parameters:
+            enable_mlflow:
+              componentInputParameter: enable_mlflow
+            experiment_name:
+              componentInputParameter: experiment_name
+            max_depth:
+              componentInputParameter: max_depth
+            mlflow_tracking_uri:
+              componentInputParameter: mlflow_tracking_uri
+            random_state:
+              componentInputParameter: random_state
+        taskInfo:
+          name: train-op
+  inputDefinitions:
+    parameters:
+      chart_path:
+        defaultValue: infra/helm/mlops-serving
+        isOptional: true
+        parameterType: STRING
+      enable_deploy_candidate:
+        defaultValue: false
+        isOptional: true
+        parameterType: BOOLEAN
+      enable_helm_deploy:
+        defaultValue: false
+        isOptional: true
+        parameterType: BOOLEAN
+      enable_mlflow:
+        defaultValue: false
+        isOptional: true
+        parameterType: BOOLEAN
+      experiment_name:
+        defaultValue: iris-kfp
+        isOptional: true
+        parameterType: STRING
+      image_repository:
+        defaultValue: ghcr.io/your-org/mlops-api
+        isOptional: true
+        parameterType: STRING
+      image_tag:
+        defaultValue: stable
+        isOptional: true
+        parameterType: STRING
+      max_depth:
+        defaultValue: 4.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      mlflow_tracking_uri:
+        defaultValue: http://mlflow-server.mlops.svc.cluster.local:5000
+        isOptional: true
+        parameterType: STRING
+      namespace:
+        defaultValue: mlops
+        isOptional: true
+        parameterType: STRING
+      random_state:
+        defaultValue: 42.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      release_name:
+        defaultValue: mlops-serving
+        isOptional: true
+        parameterType: STRING
+      repo_revision:
+        defaultValue: main
+        isOptional: true
+        parameterType: STRING
+      repo_url:
+        defaultValue: https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git
+        isOptional: true
+        parameterType: STRING
+      test_size:
+        defaultValue: 0.2
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+      threshold_accuracy:
+        defaultValue: 0.9
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+      values_file:
+        defaultValue: infra/helm/mlops-serving/values-prod.yaml
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.16.0

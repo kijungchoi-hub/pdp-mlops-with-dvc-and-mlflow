@@ -1,4 +1,12 @@
-# MLOps 아키텍처와 Helm 배포 순서
+﻿# MLOps 아키텍처와 Helm 배포 순서
+## 관련 파일
+
+- [서빙 API](../src/serving/api.py)
+- [Helm 차트](../infra/helm/mlops-serving/Chart.yaml)
+- [Helm 값 파일 - Prod](../infra/helm/mlops-serving/values-prod.yaml)
+- [네임스페이스 매니페스트](../infra/k8s/namespace.yaml)
+- [MLflow 스택 매니페스트](../infra/k8s/mlflow-stack.yaml)
+
 
 ## 1. 개요
 
@@ -11,6 +19,7 @@
 - 파이프라인 관리: `dvc.yaml`
 - 실험 추적: `MLflow`
 - 서빙 배포: `Kubernetes`, `Helm`, 선택적으로 `KServe`
+- 워크플로 오케스트레이션: 선택적으로 `Kubeflow Pipelines (KFP)`
 
 핵심 산출물은 다음입니다.
 
@@ -37,12 +46,14 @@
    Kubernetes 서빙 배포를 템플릿화하고 환경별 값으로 관리합니다.
 7. `KServe`
    필요할 때 모델 서빙용 커스텀 리소스 `InferenceService`를 사용합니다.
+8. `Kubeflow Pipelines (KFP)`
+   ML workflow를 컴포넌트와 파이프라인 단위로 오케스트레이션합니다.
 
 ### 아키텍처 다이어그램
 
 ```mermaid
 flowchart LR
-    A[Raw Data / Iris Dataset] --> B[prepare.py]
+    A[원본 데이터 / Iris 데이터셋] --> B[prepare.py]
     B --> C[data/processed]
     C --> D[train.py]
     D --> E[models/model.joblib]
@@ -50,14 +61,91 @@ flowchart LR
     C --> G[evaluate.py]
     E --> G
     G --> H[reports]
-    E --> I[FastAPI Serving]
-    I --> J[Docker Image]
-    J --> K[Helm Chart]
-    K --> L[Kubernetes Deployment]
+    C --> N[Kubeflow Pipeline]
+    N --> D
+    N --> G
+    E --> I[FastAPI 서빙]
+    I --> J[Docker 이미지]
+    J --> K[Helm 차트]
+    K --> L[Kubernetes 배포]
     K --> M[KServe InferenceService]
 ```
 
-## 3. 학습 및 서빙 흐름
+현재 저장소에는 다음 KFP 배포 자산이 포함됩니다.
+
+- `infra/kubeflow/standalone/kustomization.yaml`
+- `infra/kubeflow/pipelines/iris-training-pipeline.yaml`
+- `infra/argocd/apps/kubeflow-pipelines.yaml`
+- `infra/k8s/kfp-helm-deployer-rbac.yaml`
+
+## 3. 모니터링 아키텍처
+
+현재 저장소는 로컬 기준으로 `Prometheus`, `Grafana`, FastAPI `/metrics` 연동을 포함할 수 있고, Kubernetes 운영 환경에서는 같은 구조를 클러스터 메트릭까지 확장할 수 있습니다.
+
+### 모니터링 구성 요소
+
+1. `Prometheus`
+   FastAPI 애플리케이션과 Prometheus 자체 메트릭을 수집합니다.
+2. `Grafana`
+   수집된 메트릭을 대시보드로 시각화합니다.
+3. `NVIDIA DCGM Exporter`
+   GPU 사용률, 메모리 사용량, 온도, 전력 사용량 같은 GPU 메트릭을 노출합니다.
+3. `Alertmanager`
+   Kubernetes 운영 환경에서 임계치 초과, Pod 비정상, API 오류율 증가 같은 이벤트 알림을 전달합니다.
+4. `kube-state-metrics`
+   Kubernetes 운영 환경에서 Deployment, Pod, ReplicaSet 같은 오브젝트 상태를 노출합니다.
+5. `node-exporter`
+   Kubernetes 운영 환경에서 노드 CPU, 메모리, 디스크, 파일시스템 메트릭을 노출합니다.
+6. `FastAPI /metrics`
+   요청 수, 응답 지연 시간, 오류율 같은 애플리케이션 메트릭을 노출합니다.
+
+### 모니터링 다이어그램
+
+```mermaid
+flowchart LR
+    U[클라이언트 / 외부 트래픽] --> ING[Ingress / Service]
+    ING --> API[FastAPI 서빙 Pod]
+    API --> METRICS[/metrics endpoint]
+
+    PROM[Prometheus] --> METRICS
+    PROM --> GPU[DCGM Exporter]
+    GRAF[Grafana] --> PROM
+    OPS[Operator / On-call] --> GRAF
+
+    subgraph K8S[선택적 Kubernetes 확장]
+        KSM[kube-state-metrics]
+        NODE[node-exporter]
+        AM[Alertmanager]
+        GPU
+    end
+
+    PROM -. optional scrape .-> KSM
+    PROM -. optional scrape .-> NODE
+    PROM -. optional alerts .-> AM
+    AM -. notify .-> OPS
+```
+
+### 운영 포인트
+
+- 현재 FastAPI 서비스는 Prometheus가 scrape할 수 있도록 `/metrics` 엔드포인트를 노출하도록 구성할 수 있습니다.
+- 로컬 환경에서는 `docker-compose.yml`의 Prometheus 설정이 `api:8000/metrics`를 직접 scrape합니다.
+- GPU 환경에서는 `docker compose --profile gpu-monitoring up -d`로 `dcgm-exporter:9400`을 추가 scrape할 수 있습니다.
+- Kubernetes 환경에서는 `ServiceMonitor` 또는 scrape job을 통해 FastAPI, `kube-state-metrics`, `node-exporter`를 등록할 수 있습니다.
+- Kubernetes GPU 노드 운영 시에는 `dcgm-exporter`를 DaemonSet으로 배포하는 구성이 일반적입니다.
+- Grafana 대시보드는 최소한 API 지연 시간, 요청 수, 오류율, Pod 재시작 수, CPU/메모리 사용량을 포함하는 것이 좋습니다.
+- GPU 워크로드가 있다면 GPU utilization, framebuffer memory, temperature, power draw 대시보드를 함께 두는 것이 좋습니다.
+- Alertmanager는 Slack, Email, PagerDuty 같은 채널과 연계할 수 있습니다.
+- 로컬 Grafana에는 `MLOps/GPU Monitoring` 대시보드를 provisioning으로 자동 등록할 수 있습니다.
+
+로컬 접속 정보:
+
+- FastAPI: `http://localhost:8000`
+- FastAPI metrics: `http://localhost:8000/metrics`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+- DCGM Exporter: `http://localhost:9400/metrics` (`gpu-monitoring` profile 사용 시)
+
+## 4. 학습 및 서빙 흐름
 
 ### 학습 흐름
 
@@ -74,7 +162,7 @@ flowchart LR
 3. `/predict`는 입력 피처를 받아 예측 결과와 클래스명을 반환합니다.
 4. 이 서비스는 Docker 이미지로 빌드되어 Kubernetes에 배포됩니다.
 
-## 4. Helm 차트 구조
+## 5. Helm 차트 구조
 
 Helm chart 위치:
 
@@ -113,7 +201,7 @@ Helm chart 위치:
 - `ingress.yaml`
   표준 Deployment 모드에서 Ingress를 선택적으로 생성합니다.
 
-## 5. 배포 전 준비사항
+## 6. 배포 전 준비사항
 
 Helm 배포 전에 다음이 준비되어야 합니다.
 
@@ -123,7 +211,7 @@ Helm 배포 전에 다음이 준비되어야 합니다.
 4. `values-prod.yaml`의 이미지 경로와 태그가 실제 값이어야 합니다.
 5. `kserve.enabled=true`를 사용할 경우 클러스터에 KServe CRD와 컨트롤러가 설치되어 있어야 합니다.
 
-## 6. 권장 배포 순서
+## 7. 권장 배포 순서
 
 ### 1. 모델 학습 및 검증
 
@@ -235,7 +323,7 @@ kubectl describe deployment mlops-serving-mlops-serving -n mlops
 kubectl logs deployment/mlops-serving-mlops-serving -n mlops
 ```
 
-## 7. 배포 패턴
+## 8. 배포 패턴
 
 ### 패턴 A. 일반 Kubernetes 배포
 
@@ -272,7 +360,7 @@ kserve:
 - `kserve.enabled=true`일 때도 현재 차트는 기본 `Deployment`를 함께 만들 수 있습니다.
 - 운영 정책상 둘 중 하나만 쓰고 싶다면 이후 chart 조건을 더 분리하는 것이 좋습니다.
 
-## 8. 현재 저장소 기준 운영 순서 요약
+## 9. 현재 저장소 기준 운영 순서 요약
 
 1. `dvc repro`로 학습 파이프라인 실행
 2. `models/model.joblib` 생성 확인
@@ -282,9 +370,13 @@ kserve:
 6. `helm upgrade --install`로 배포
 7. `kubectl get`과 `kubectl logs`로 상태 확인
 
-## 9. 다음 개선 권장사항
+## 10. 다음 개선 권장사항
 
 - `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml`로 환경 분리
 - Helm chart가 `Deployment`와 `InferenceService`를 완전히 분기하도록 조건 정리
 - 모델 파일을 이미지 내 포함 방식이 아니라 외부 아티팩트 저장소 연동 방식으로 확장
 - GitHub Actions 배포 단계도 Helm 기준으로 일원화
+- Prometheus, Grafana, Alertmanager를 Helm chart 또는 별도 observability stack으로 배포
+- FastAPI `/metrics` 계측과 Grafana 대시보드 템플릿 추가
+
+

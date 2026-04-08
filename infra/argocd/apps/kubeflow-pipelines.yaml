@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubeflow-pipelines
+  namespace: argocd
+spec:
+  project: mlops-platform
+  source:
+    repoURL: https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git
+    targetRevision: main
+    path: infra/kubeflow/standalone
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubeflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

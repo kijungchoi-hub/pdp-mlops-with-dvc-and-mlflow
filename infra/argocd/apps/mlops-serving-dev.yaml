@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-serving-dev
+  namespace: argocd
+spec:
+  project: mlops-platform
+  source:
+    repoURL: https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git
+    targetRevision: main
+    path: infra/helm/mlops-serving
+    helm:
+      releaseName: mlops-serving
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

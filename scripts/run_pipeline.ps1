@@ -16,7 +16,7 @@ if (Test-Path $envFile) {
     }
 }
 
-# Keep DVC state inside the repository to avoid Windows system-level permission issues.
+# Windows 시스템 권한 문제를 피하기 위해 DVC 상태를 저장소 내부에 유지합니다.
 $env:DVC_SYSTEM_CONFIG_DIR = ".dvc\system"
 $env:DVC_GLOBAL_CONFIG_DIR = ".dvc\global"
 $env:DVC_SITE_CACHE_DIR = ".dvc\site-cache"

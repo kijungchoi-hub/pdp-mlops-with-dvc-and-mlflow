@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.common.utils import get_env
 
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 
     try:
         app.state.model = load_model()
-    except Exception as exc:  # pragma: no cover - surfaced via health/predict
+    except Exception as exc:  # pragma: no cover - health/predict 경로에서 확인됨
         app.state.model_error = str(exc)
 
     yield
@@ -56,9 +57,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MLOps Inference API",
-    description="FastAPI service for serving the trained Iris classifier.",
+    description="학습된 Iris 분류 모델을 서빙하는 FastAPI 서비스입니다.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+Instrumentator(excluded_handlers=["/health"]).instrument(app).expose(
+    app,
+    include_in_schema=False,
+    endpoint="/metrics",
 )
 
 

@@ -1,4 +1,12 @@
-# 장애 대응 Runbook
+﻿# 장애 대응 런북
+## 관련 파일
+
+- [운영 체크리스트](./operations-checklist.md)
+- [Helm 값 파일 - Prod](../infra/helm/mlops-serving/values-prod.yaml)
+- [Kubernetes 네임스페이스](../infra/k8s/namespace.yaml)
+- [MLflow 스택 매니페스트](../infra/k8s/mlflow-stack.yaml)
+- [Argo CD 가이드](./argocd-deployment-guide.md)
+
 
 ## 1. 목적
 
@@ -263,3 +271,5 @@ kubectl logs deployment/mlops-serving-mlops-serving -n mlops
 - `docs/mlops-architecture-and-helm-deployment.md`
 - `docs/operations-checklist.md`
 - `infra/helm/mlops-serving/values-prod.yaml`
+
+

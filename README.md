@@ -1,4 +1,12 @@
-# MLOps with Git, DVC, MLflow, Kubernetes, and Helm
+﻿# Git, DVC, MLflow, Kubernetes, Helm 기반 MLOps 예제
+## 관련 파일
+
+- [파이프라인 정의](dvc.yaml)
+- [서빙 API](src/serving/api.py)
+- [Helm 차트](infra/helm/mlops-serving/Chart.yaml)
+- [CI/CD 워크플로](.github/workflows/ci-cd.yaml)
+- [Argo CD 가이드](docs/argocd-deployment-guide.md)
+
 
 작은 규모의 MLOps 예제를 기준으로 학습 파이프라인, 실험 추적, 모델 서빙, Kubernetes 배포를 한 저장소에서 다루는 프로젝트입니다.
 
@@ -11,12 +19,13 @@
 - `Kubernetes`: 모델 서빙 배포
 - `Helm`: 서빙 배포 템플릿화
 - `KServe`: 선택적 모델 서빙 커스텀 리소스
+- `Kubeflow Pipelines (KFP)`: 선택적 ML 워크플로 오케스트레이션
 
 ## 아키텍처
 
 ```mermaid
 flowchart LR
-    A[Raw Data / Iris Dataset] --> B[prepare.py]
+    A[원본 데이터 / Iris 데이터셋] --> B[prepare.py]
     B --> C[data/processed]
     C --> D[train.py]
     D --> E[models/model.joblib]
@@ -24,33 +33,76 @@ flowchart LR
     C --> G[evaluate.py]
     E --> G
     G --> H[reports]
-    E --> I[FastAPI Serving]
-    I --> J[Docker Image]
-    J --> K[Helm Chart]
-    K --> L[Kubernetes Deployment]
+    E --> I[FastAPI 서빙]
+    I --> J[Docker 이미지]
+    J --> K[Helm 차트]
+    K --> L[Kubernetes 배포]
     K --> M[KServe InferenceService]
 ```
+
+## 모니터링 아키텍처
+
+현재 저장소는 로컬 개발용 `Prometheus`, `Grafana` 구성을 포함하며, Kubernetes 운영 환경에서는 같은 패턴을 확장해 적용할 수 있습니다.
+
+- `Prometheus`: FastAPI `/metrics`와 Prometheus 자체 메트릭 수집
+- `Grafana`: Prometheus 데이터 소스를 기본 등록해 대시보드 시각화
+- `FastAPI /metrics`: 요청 수, 지연 시간, 상태 코드 분포 노출
+- `NVIDIA DCGM Exporter`: GPU 사용률, 메모리, 온도, 전력 메트릭 수집
+- `kube-state-metrics`, `node-exporter`, `Alertmanager`: Kubernetes 운영 환경에서 추가 확장 가능
+
+```mermaid
+flowchart LR
+    U[클라이언트 / 외부 트래픽] --> ING[Ingress / Service]
+    ING --> API[FastAPI 서빙 Pod]
+    API --> METRICS[/metrics endpoint]
+
+    PROM[Prometheus] --> METRICS
+    PROM --> GPU[DCGM Exporter]
+    GRAF[Grafana] --> PROM
+    OPS[Operator / On-call] --> GRAF
+
+    subgraph K8S[선택적 Kubernetes 확장]
+        KSM[kube-state-metrics]
+        NODE[node-exporter]
+        AM[Alertmanager]
+        GPU
+    end
+
+    PROM -. optional scrape .-> KSM
+    PROM -. optional scrape .-> NODE
+    PROM -. optional alerts .-> AM
+    AM -. notify .-> OPS
+```
+
+로컬 접속 정보:
+
+- FastAPI: `http://localhost:8000`
+- FastAPI metrics: `http://localhost:8000/metrics`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (`admin` / `admin`)
+- DCGM Exporter: `http://localhost:9400/metrics` (`gpu-monitoring` profile 사용 시)
 
 ## 문서
 
 - 아키텍처 및 Helm 배포: `docs/mlops-architecture-and-helm-deployment.md`
+- Kubeflow Pipelines 가이드: `docs/kubeflow-pipelines-guide.md`
 - 운영 체크리스트: `docs/operations-checklist.md`
-- 장애 대응 Runbook: `docs/incident-response-runbook.md`
+- 장애 대응 런북: `docs/incident-response-runbook.md`
 - CI/CD 가이드: `docs/cicd-deployment-guide.md`
 - 프로젝트 구조: `docs/project-structure.md`
 
 ## 저장소 구조
 
 ```text
-configs/   pipeline and runtime config
-data/      processed datasets
-docs/      architecture and operation docs
-infra/     docker, kubernetes, helm assets
-models/    trained model artifacts
-mlruns/    local mlflow tracking data
-reports/   metrics and evaluation outputs
-scripts/   local operation scripts
-src/       application source code
+configs/   파이프라인 및 실행 설정
+data/      처리된 데이터셋
+docs/      아키텍처 및 운영 문서
+infra/     Docker, Kubernetes, Helm 자산
+models/    학습된 모델 아티팩트
+mlruns/    로컬 MLflow 추적 데이터
+reports/   메트릭 및 평가 리포트
+scripts/   로컬 운영 스크립트
+src/       애플리케이션 소스 코드
 ```
 
 주요 코드 위치:
@@ -58,6 +110,7 @@ src/       application source code
 - `src/pipelines/prepare.py`
 - `src/pipelines/train.py`
 - `src/pipelines/evaluate.py`
+- `src/pipelines/kfp_pipeline.py`
 - `src/serving/api.py`
 - `dvc.yaml`
 
@@ -93,6 +146,23 @@ docker compose up -d
 2. `train`
 3. `evaluate`
 
+KFP 파이프라인 컴파일:
+
+```powershell
+.\scripts\compile_kfp_pipeline.ps1
+```
+
+산출물:
+
+- `infra/kubeflow/pipelines/iris-training-pipeline.yaml`
+
+Kubeflow Pipelines standalone 설치 자산:
+
+- `infra/kubeflow/standalone/kustomization.yaml`
+- `infra/kubeflow/standalone/namespace.yaml`
+- `infra/argocd/apps/kubeflow-pipelines.yaml`
+- `infra/k8s/kfp-helm-deployer-rbac.yaml`
+
 실행:
 
 ```powershell
@@ -115,6 +185,9 @@ docker compose up -d
 - `postgres`
 - `minio`
 - `api`
+- `prometheus`
+- `grafana`
+- `dcgm-exporter` (`gpu-monitoring` profile에서 선택 실행)
 
 접속 정보:
 
@@ -122,6 +195,23 @@ docker compose up -d
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 - FastAPI: `http://localhost:8000`
+- FastAPI metrics: `http://localhost:8000/metrics`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+- DCGM Exporter: `http://localhost:9400/metrics`
+
+GPU 모니터링을 함께 실행하려면:
+
+```powershell
+docker compose --profile gpu-monitoring up -d
+```
+
+Grafana에는 `MLOps/GPU Monitoring` 대시보드가 자동 등록됩니다.
+
+주의:
+
+- `dcgm-exporter`는 NVIDIA GPU와 호스트의 NVIDIA Container Toolkit 구성이 되어 있어야 합니다.
+- GPU가 없는 환경에서는 기본 `docker compose up -d`만 사용하면 됩니다.
 
 ## FastAPI 모델 서빙
 
@@ -184,13 +274,13 @@ kubectl apply -f infra/k8s/model-serving-inferenceservice.yaml
 
 Helm chart 위치:
 
-- `infra/helm/mlops-serving`
+- [infra/helm/mlops-serving](./infra/helm/mlops-serving)
 
 환경별 values 파일:
 
-- `infra/helm/mlops-serving/values-dev.yaml`
-- `infra/helm/mlops-serving/values-staging.yaml`
-- `infra/helm/mlops-serving/values-prod.yaml`
+- [infra/helm/mlops-serving/values-dev.yaml](./infra/helm/mlops-serving/values-dev.yaml)
+- [infra/helm/mlops-serving/values-staging.yaml](./infra/helm/mlops-serving/values-staging.yaml)
+- [infra/helm/mlops-serving/values-prod.yaml](./infra/helm/mlops-serving/values-prod.yaml)
 
 배포 모드:
 
@@ -278,3 +368,5 @@ ghcr.io/<owner>/mlops-api:<git-sha>
 - 이미지 빌드 단계에서 모델 파일 존재 여부와 서빙 시작 검증 자동화
 - deploy 이후 cluster-level smoke test와 synthetic monitoring 추가
 - 운영 환경용 secret, ingress, TLS, PVC 구성을 별도 values 파일로 분리
+
+

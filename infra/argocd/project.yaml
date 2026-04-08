@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mlops-platform
+  namespace: argocd
+spec:
+  description: MLOps 플랫폼 환경을 위한 GitOps 프로젝트
+  sourceRepos:
+    - https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git
+  destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    - namespace: mlops
+      server: https://kubernetes.default.svc
+    - namespace: mlops-dev
+      server: https://kubernetes.default.svc
+    - namespace: mlops-staging
+      server: https://kubernetes.default.svc
+    - namespace: mlops-prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

@@ -1,9 +1,11 @@
 dvc[s3]
 fastapi
 joblib
+kfp
 mlflow==2.22.0
 numpy
 pandas
+prometheus-fastapi-instrumentator
 psycopg2-binary
 pyyaml
 scikit-learn

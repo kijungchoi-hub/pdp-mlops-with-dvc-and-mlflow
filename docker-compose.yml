@@ -16,6 +16,40 @@ services:
     volumes:
       - ./models:/app/models:ro
 
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    container_name: mlops-prometheus
+    depends_on:
+      - api
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.9-3.6.1-ubuntu22.04
+    container_name: mlops-dcgm-exporter
+    profiles:
+      - gpu-monitoring
+    ports:
+      - "9400:9400"
+    cap_add:
+      - SYS_ADMIN
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: mlops-grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+
   postgres:
     image: postgres:16
     container_name: mlflow-postgres
@@ -79,3 +113,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  grafana_data:

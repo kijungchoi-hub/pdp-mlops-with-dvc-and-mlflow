@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow-stack
+  namespace: argocd
+spec:
+  project: mlops-platform
+  source:
+    repoURL: https://github.com/REPLACE_WITH_OWNER/REPLACE_WITH_REPO.git
+    targetRevision: main
+    path: infra/k8s
+    directory:
+      recurse: false
+      include: mlflow-stack.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

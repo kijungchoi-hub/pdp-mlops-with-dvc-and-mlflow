@@ -1,4 +1,12 @@
-# 운영 체크리스트
+﻿# 운영 체크리스트
+## 관련 파일
+
+- [Helm 값 파일 - Prod](../infra/helm/mlops-serving/values-prod.yaml)
+- [Kubernetes 네임스페이스](../infra/k8s/namespace.yaml)
+- [MLflow 스택 매니페스트](../infra/k8s/mlflow-stack.yaml)
+- [장애 대응 런북](./incident-response-runbook.md)
+- [Argo CD 가이드](./argocd-deployment-guide.md)
+
 
 ## 1. 배포 전 체크
 
@@ -144,3 +152,5 @@ helm rollback mlops-serving <revision> -n mlops
 - `docs/mlops-architecture-and-helm-deployment.md`
 - `docs/project-structure.md`
 - `infra/helm/mlops-serving/values-prod.yaml`
+
+
