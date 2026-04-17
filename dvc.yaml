@@ -1,6 +1,6 @@
 stages:
   prepare:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.prepare
+    cmd: python -m src.pipelines.prepare
     deps:
       - src/pipelines/prepare.py
       - src/common/utils.py
@@ -9,7 +9,7 @@ stages:
       - data/processed/train.csv
       - data/processed/test.csv
   train:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.train
+    cmd: python -m src.pipelines.train
     deps:
       - src/pipelines/train.py
       - src/common/utils.py
@@ -25,7 +25,7 @@ stages:
     metrics:
       - reports/metrics.json
   evaluate:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.evaluate
+    cmd: python -m src.pipelines.evaluate
     deps:
       - src/pipelines/evaluate.py
       - src/common/utils.py

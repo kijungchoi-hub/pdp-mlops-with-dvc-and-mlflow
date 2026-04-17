@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-serving.txt .
+RUN pip install --no-cache-dir -r requirements-serving.txt
 
 COPY src ./src
 COPY models ./models

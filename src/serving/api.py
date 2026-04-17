@@ -4,7 +4,7 @@ from typing import Any
 
 import joblib
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
 
     try:
         app.state.model = load_model()
-    except Exception as exc:  # pragma: no cover - health/predict 경로에서 확인됨
+    except Exception as exc:  # pragma: no cover - surfaced by /ready and /predict
         app.state.model_error = str(exc)
 
     yield
@@ -57,12 +57,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MLOps Inference API",
-    description="학습된 Iris 분류 모델을 서빙하는 FastAPI 서비스입니다.",
+    description="FastAPI service for serving a trained Iris classification model.",
     version="1.0.0",
     lifespan=lifespan,
 )
 
-Instrumentator(excluded_handlers=["/health"]).instrument(app).expose(
+Instrumentator(excluded_handlers=["/health", "/live", "/ready"]).instrument(app).expose(
     app,
     include_in_schema=False,
     endpoint="/metrics",
@@ -73,7 +73,7 @@ def get_loaded_model(request: Request) -> Any:
     model = request.app.state.model
     if model is None:
         detail = request.app.state.model_error or "Model is not loaded."
-        raise HTTPException(status_code=503, detail=detail)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
     return model
 
 
@@ -87,6 +87,8 @@ def read_root() -> dict[str, str]:
         "service": "mlops-inference-api",
         "docs": "/docs",
         "health": "/health",
+        "live": "/live",
+        "ready": "/ready",
         "predict": "/predict",
     }
 
@@ -98,6 +100,24 @@ def health(request: Request) -> dict[str, Any]:
         "model_loaded": request.app.state.model is not None,
         "model_path": request.app.state.model_path,
         "detail": request.app.state.model_error,
+    }
+
+
+@app.get("/live")
+def live() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready(request: Request) -> dict[str, Any]:
+    if request.app.state.model is None:
+        detail = request.app.state.model_error or "Model is not loaded."
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+
+    return {
+        "status": "ok",
+        "model_loaded": True,
+        "model_path": request.app.state.model_path,
     }
 
 

@@ -17,11 +17,11 @@ deployment:
   env: []
   envFromSecret: ""
   readinessProbe:
-    path: /health
+    path: /ready
     initialDelaySeconds: 5
     periodSeconds: 10
   livenessProbe:
-    path: /health
+    path: /live
     initialDelaySeconds: 15
     periodSeconds: 20
 

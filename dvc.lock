@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   prepare:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.prepare
+    cmd: python -m src.pipelines.prepare
     deps:
     - path: configs/params.yaml
       hash: md5
@@ -25,7 +25,7 @@ stages:
       md5: f27a97349b5d81a5b868e96bc0b0b160
       size: 2357
   train:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.train
+    cmd: python -m src.pipelines.train
     deps:
     - path: configs/params.yaml
       hash: md5
@@ -58,7 +58,7 @@ stages:
       md5: 49a9b831bba00b151165486507318690
       size: 84
   evaluate:
-    cmd: .venv\Scripts\python.exe -m src.pipelines.evaluate
+    cmd: python -m src.pipelines.evaluate
     deps:
     - path: data/processed/test.csv
       hash: md5
